@@ -1,0 +1,17 @@
+{% extends 'layout.html.twig' %}
+
+
+{% block title %}{{ parent() }} - Index{% endblock %}
+
+{% block body %}
+    <div class="row">
+        {% for post in listAdverts %}
+            <div class="col-md-4">
+                <a href="{{ path('oc_advert_view', {'id': post.id}) }}"><h5>{{ post.title }}</h5></a>
+                <p>Auteur : {{ post.author }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}
+
