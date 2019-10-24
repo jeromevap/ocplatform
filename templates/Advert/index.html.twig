@@ -5,10 +5,10 @@
 
 {% block body %}
     <div class="row">
-        {% for post in listAdverts %}
+        {% for advert in listAdverts %}
             <div class="col-md-4">
-                <a href="{{ path('oc_advert_view', {'id': post.id}) }}"><h5>{{ post.title }}</h5></a>
-                <p>Auteur : {{ post.author }}</p>
+                <a href="{{ path('oc_advert_view', {'id': advert.id}) }}"><h5>{{ advert.title }}</h5></a>
+                <p>Auteur : {{ advert.author }}</p>
             </div>
         {% endfor %}
     </div>
