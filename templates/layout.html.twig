@@ -24,8 +24,8 @@
         <p class="lead">Un MOOC OpenClassrooms</p>
     </div>
     <div class="row">
-        <div id="menu" class="col-md-3 col-12">
-            <div class="col-12">
+        <div id="menu" class="col-md-2 col-12">
+            <div>
                 <h3>Les annonces</h3>
                 <ul class="nav">
                     <li class="nav-item"><a class="nav-link" href="{{ path('oc_advert_index') }}">Accueil</a></li>
@@ -33,15 +33,17 @@
                     </li>
                 </ul>
             </div>
-            <div class="col-12">
+            <div>
                 <h3>Les dernières annonces</h3>
                 {{ render(controller('App\\Controller\\AdvertController:menu', {'limit':  3})) }}
             </div>
         </div>
-        <div class="col-md-9 col-12">
-            {% block body %}
-                <p>Layout vide</p>
-            {% endblock %}
+        <div class="col-md-10 col-12">
+            <div class="row">
+                {% block body %}
+                    <p>Layout vide</p>
+                {% endblock %}
+            </div>
         </div>
     </div>
     <hr>

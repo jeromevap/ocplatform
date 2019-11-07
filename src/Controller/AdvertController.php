@@ -91,13 +91,10 @@ class AdvertController extends AbstractController {
   public function add(Request $request) {
     //Récupération de doctrine du repository pour la classe Advert (un repo par classe) :
     $manager = $this->getDoctrine()->getManager();
-
-    $manager->persist(
-      $anAdvert = new Advert('Mon titre d\'annonce',
-        'Jérôme V.',
-        'Un petit texte exemple pour cette annonce qui ne contient ' .
-        'pas grand chose.')
-    );
+    $anAdvert = new Advert('Mon titre d\'annonce',
+      'Jérôme V.',
+      'Un petit texte exemple pour cette annonce qui ne contient ' .
+      'pas grand chose.');
 
     $anAdvert->setImage(
       new Image(
@@ -111,6 +108,7 @@ class AdvertController extends AbstractController {
     $ap1->setAdvert($anAdvert);
     $ap2->setAdvert($anAdvert);
 
+    $manager->persist($anAdvert);
     $manager->persist($ap1);
     $manager->persist($ap2);
 
@@ -131,10 +129,26 @@ class AdvertController extends AbstractController {
       $this->addFlash('notice', 'Annonce bien modifiée.');
       return $this->redirectToRoute('oc_advert_view', ['id' => $id]);
     }
-    $advert = $this->getDoctrine()->getRepository()->find($id);
+    $manager = $this->getDoctrine()->getManager();
+
+    $advert = $manager->getRepository('App:Advert')->find($id);
     if (is_null($advert)) {
       throw new EntityNotFoundException("Aucune annonce d'ID ${id} trouvée dans la base.");
     }
+
+    // La méthode findAll retourne toutes les catégories de la base de données
+    $listCategories = $manager->getRepository('App:Category')->findAll();
+
+    // On boucle sur les catégories pour les lier à l'annonce
+    foreach ($listCategories as $category) {
+      $advert->addCategory($category);
+    }
+
+    // Pour persister le changement dans la relation, il faut persister l'entité propriétaire
+    // Ici, Advert est le propriétaire, donc inutile de la persister car on l'a récupérée depuis Doctrine
+
+    // Étape 2 : On déclenche l'enregistrement
+    $manager->flush();
 
     return $this->render('Advert/edit.html.twig', ['advert' => $advert]);
   }
@@ -144,6 +158,27 @@ class AdvertController extends AbstractController {
    *   "\d+"})
    */
   public function delete($id) {
+
+    $em = $this->getDoctrine()->getManager();
+
+    // On récupère l'annonce $id
+    $advert = $em->getRepository('App:Advert')->find($id);
+
+    if (is_null($advert)) {
+      throw new EntityNotFoundException("L'annonce d'id ".$id." n'existe pas.");
+    }
+
+    // On boucle sur les catégories de l'annonce pour les supprimer
+    foreach ($advert->getCategories() as $category) {
+      $advert->removeCategory($category);
+    }
+
+    // Pour persister le changement dans la relation, il faut persister l'entité propriétaire
+    // Ici, Advert est le propriétaire, donc inutile de la persister car on l'a récupérée depuis Doctrine
+
+    // On déclenche la modification
+    $em->flush();
+
     return $this->render('Advert/delete.html.twig');
 
   }

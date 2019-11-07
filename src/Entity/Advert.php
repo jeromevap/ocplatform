@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use DateTime;
 use DateTimeInterface;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -51,6 +53,11 @@ class Advert {
    */
   private $image;
 
+  /**
+   * @ORM\ManyToMany(targetEntity="App\Entity\Category", inversedBy="adverts", cascade={"persist"})
+   */
+  private $categories;
+
 
   public function __construct(string $title = 'NOTHING', string $author = 'UNKNOWN', string $content = 'NOTHING') {
     $this->date = new DateTime();
@@ -58,6 +65,7 @@ class Advert {
     $this->setTitle($title);
     $this->setAuthor($author);
     $this->setContent($content);
+    $this->categories = new ArrayCollection();
   }
 
   public function getId(): ?int {
@@ -120,6 +128,32 @@ class Advert {
 
   public function getImage() {
     return $this->image;
+  }
+
+  /**
+   * @return Collection|Category[]
+   */
+  public function getCategories(): Collection
+  {
+      return $this->categories;
+  }
+
+  public function addCategory(Category $category): self
+  {
+      if (!$this->categories->contains($category)) {
+          $this->categories[] = $category;
+      }
+
+      return $this;
+  }
+
+  public function removeCategory(Category $category): self
+  {
+      if ($this->categories->contains($category)) {
+          $this->categories->removeElement($category);
+      }
+
+      return $this;
   }
 
 }
