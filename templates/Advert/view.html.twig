@@ -3,48 +3,67 @@
 {% block title %}{{ parent() }} - {{ advert.title }}{% endblock %}
 
 {% block body %}
-    <div class="col-8">
-        <div class="card bg-light">
-            <h4 class="card-header">{{ advert.title }}</h4>
-            <div class="card-body">
-                <figure class="figure"><img
-                            src="{{ advert.image.url | default("https://district-aube.fff.fr/wp-content/uploads/sites/58/2018/11/depositphotos_124327470-stock-illustration-absent-rubber-stamp-611x378.jpg") }}"
-                            class="img-fluid rounded"
-                            alt="{{ advert.image.alt | default("Pas d'image disponible") }}"></figure>
-                <h5 class="card-subtitle text-muted">{{ advert.author }}</h5>
-                <p class="card-text">{{ advert.content }}</p>
-                <p class="card-text">{{ advert.date | date('d/m/Y') }} - {{ advert.id }}</p>
-                <h5 class="card-title">Catégories</h5>
-                <div>
-                    {% if not advert.categories.empty %}
-                        <p>
-                            {% for category in advert.categories %}
-                                <span class="badge badge-primary">{{ category.name }}</span>
-                            {% endfor %}
-                        </p>
+    <div class="row">
+        <div class="col-8">
+            <div class="card bg-light">
+                <h4 class="card-header">{{ advert.title }}</h4>
+                <div class="card-body">
+                    <figure class="figure"><img
+                                src="{{ advert.image.url | default("https://district-aube.fff.fr/wp-content/uploads/sites/58/2018/11/depositphotos_124327470-stock-illustration-absent-rubber-stamp-611x378.jpg") }}"
+                                class="img-fluid rounded"
+                                alt="{{ advert.image.alt | default("Pas d'image disponible") }}"></figure>
+                    <h5 class="card-subtitle text-muted">{{ advert.author }}</h5>
+                    <p class="card-text">{{ advert.content }}</p>
+                    <p class="card-text">{{ advert.date | date('d/m/Y') }} - {{ advert.id }}</p>
+                    <h5 class="card-title">Catégories</h5>
+                    <div>
+                        {# La zone de catégories #}
+                        {% if not advert.categories.empty %}
+                            <p>
+                                {% for category in advert.categories %}
+                                    <span class="badge badge-primary">{{ category.name }}</span>
+                                {% endfor %}
+                            </p>
+                        {% endif %}
+                    </div>
+                    {% if not advertSkills is empty %}
+                        <h5>Compétences requises</h5>
+                        <div> {# La zone des compétences #}
+                            <ul class="list-inline">
+                                {% for advSk in advertSkills %}
+                                    <li class="list-inline-item">
+                                        {{ advSk.skill.name }} ({{ advSk.level }})
+                                        {% if not loop.last %},
+                                        {% else %}.
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     {% endif %}
-                </div>
-                <div>
-                    <a href="{{ path('oc_advert_index') }}" class="btn btn-outline-primary">
-                        <i class="fa fa-chevron-left"></i>
-                        Retour à la liste
-                    </a>
-                    <a href="{{ path('oc_advert_edit', {'id': advert.id}) }}" class="btn btn-outline-primary">
-                        <i class="fa fa-edit"></i>
-                        Modifier l'annonce
-                    </a>
-                    <a href="{{ path('oc_advert_delete', {'id': advert.id}) }}" class="btn btn-outline-danger">
-                        <i class="fa fa-trash"></i>
-                        Supprimer l'annonce
-                    </a>
+                    {# La zone de boutons #}
+                    <div>
+                        <a href="{{ path('oc_advert_index') }}" class="btn btn-outline-primary">
+                            <i class="fa fa-chevron-left"></i>
+                            Retour à la liste
+                        </a>
+                        <a href="{{ path('oc_advert_edit', {'id': advert.id}) }}" class="btn btn-outline-primary">
+                            <i class="fa fa-edit"></i>
+                            Modifier l'annonce
+                        </a>
+                        <a href="{{ path('oc_advert_delete', {'id': advert.id}) }}" class="btn btn-outline-danger">
+                            <i class="fa fa-trash"></i>
+                            Supprimer l'annonce
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-4">
-        {% for app in applications %}
-            <h3>{{ app.author }}</h3>
-            <p>{{ app.content }}</p>
-        {% endfor %}
+        <div class="col-4">
+            {% for app in applications %}
+                <h3>{{ app.author }}</h3>
+                <p>{{ app.content }}</p>
+            {% endfor %}
+        </div>
     </div>
 {% endblock %}

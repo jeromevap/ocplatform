@@ -1,8 +1,10 @@
 <ul class="nav">
     {% for advert in listAdverts %}
         <li class="nav-item">
-            <a class="nav-link" href="{{ path('oc_advert_view', {'id': advert.id}) }}">{{ advert.title }}</a>
-    </li>
-    {%  endfor %}
+            <a class="nav-link"
+               href="{{ path('oc_advert_view', {'id': advert.id}) }}">
+                <h6>{{ advert.title }}</h6></a>
+        </li>
+    {% endfor %}
 </ul>
 

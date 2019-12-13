@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\ImageRepository")
@@ -54,5 +55,49 @@ class Image {
 
     return $this;
   }
+
+    private $file;
+
+    public function getFile(): ?UploadedFile
+    {
+        return $this->file;
+    }
+
+    public function setFile(UploadedFile $file = null)
+    {
+        $this->file = $file;
+    }
+
+    public function upload()
+    {
+        // Si jamais il n'y a pas de fichier (champ facultatif), on ne fait rien
+        if (is_null($this->file)) {
+            return;
+        }
+
+        // On récupère le nom original du fichier de l'internaute
+        $name = $this->file->getClientOriginalName();
+
+        // On déplace le fichier envoyé dans le répertoire de notre choix
+        $this->file->move($this->getUploadRootDir(), $name);
+
+        // On sauvegarde le nom de fichier dans notre attribut $url
+        $this->url = $name;
+
+        // On crée également le futur attribut alt de notre balise <img>
+        $this->alt = $name;
+    }
+
+    public function getUploadDir()
+    {
+        // On retourne le chemin relatif vers l'image pour un navigateur (relatif au répertoire /web donc)
+        return 'uploads/img';
+    }
+
+    protected function getUploadRootDir()
+    {
+        // On retourne le chemin relatif vers l'image pour notre code PHP
+        return __DIR__.'/../../../../htdocs/'.$this->getUploadDir();
+    }
 
 }

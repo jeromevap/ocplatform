@@ -5,18 +5,37 @@ namespace App\Repository;
 use App\Entity\Application;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\ORM\Query\Expr\Join;
 
+//@formatter:off
 /**
  * @method Application|null find($id, $lockMode = null, $lockVersion = null)
  * @method Application|null findOneBy(array $criteria, array $orderBy = null)
  * @method Application[]    findAll()
  * @method Application[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
+//@formatter:on
 class ApplicationRepository extends ServiceEntityRepository
 {
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Application::class);
+    }
+
+    public function getApplicationsWithAdvert(int $limit)
+    {
+        $qb = $this->createQueryBuilder('app');
+        $qb->innerJoin(
+          'app.advert',
+          'adv',
+          Join::WITH,
+          $qb->expr()->isNotNull('adv')
+        )
+          ->orderBy('app.id', 'DESC')
+          ->setMaxResults($limit);
+
+        return $qb->getQuery()->getResult();
     }
 
     // /**

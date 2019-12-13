@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity(repositoryClass="App\Repository\AdvertRepository")
  * @ORM\Table(name="oc_advert")
+ * @ORM\HasLifecycleCallbacks()
  */
 class Advert {
 
@@ -58,14 +59,31 @@ class Advert {
    */
   private $categories;
 
+  /**
+   * @ORM\OneToMany(targetEntity="App\Entity\Application", mappedBy="advert")
+   */
+  private $applications;
+
+  /**
+   * @ORM\Column(type="datetime", nullable=true)
+   */
+  private $updatedAt;
+
+  /**
+   * @ORM\Column(type="integer")
+   */
+  private $nbApplications;
+
 
   public function __construct(string $title = 'NOTHING', string $author = 'UNKNOWN', string $content = 'NOTHING') {
     $this->date = new DateTime();
-    $this->published = TRUE;
+    $this->published = true;
     $this->setTitle($title);
     $this->setAuthor($author);
     $this->setContent($content);
     $this->categories = new ArrayCollection();
+    $this->applications = new ArrayCollection();
+    $this->setNbApplications(0);
   }
 
   public function getId(): ?int {
@@ -126,7 +144,7 @@ class Advert {
     $this->image = $image;
   }
 
-  public function getImage() {
+  public function getImage() : ?Image {
     return $this->image;
   }
 
@@ -154,6 +172,78 @@ class Advert {
       }
 
       return $this;
+  }
+
+  /**
+   * @return Collection|Application[]
+   */
+  public function getApplications(): Collection
+  {
+      return $this->applications;
+  }
+
+  public function addApplication(Application $application): self
+  {
+      if (!$this->applications->contains($application)) {
+          $this->applications[] = $application;
+          $application->setAdvert($this);
+      }
+
+      return $this;
+  }
+
+  public function removeApplication(Application $application): self
+  {
+      if ($this->applications->contains($application)) {
+          $this->applications->removeElement($application);
+          // set the owning side to null (unless already changed)
+          if ($application->getAdvert() === $this) {
+              $application->setAdvert(null);
+          }
+      }
+
+      return $this;
+  }
+
+  public function getUpdatedAt(): ?\DateTimeInterface
+  {
+      return $this->updatedAt;
+  }
+
+  public function setUpdatedAt(?\DateTimeInterface $updatedAt): self
+  {
+      $this->updatedAt = $updatedAt;
+
+      return $this;
+  }
+
+    /**
+     * @throws \Exception
+     * @ORM\PreUpdate()
+     */
+  public function updateDate() {
+      $this->setUpdatedAt(new DateTime());
+  }
+
+  public function getNbApplications(): ?int
+  {
+      return $this->nbApplications;
+  }
+
+  // Utilisé juste pour l'initialisation
+  private function setNbApplications(int $nbApplications): self
+  {
+      $this->nbApplications = $nbApplications;
+
+      return $this;
+  }
+
+  public function increaseApplicationNb() {
+      $this->nbApplications++;
+  }
+
+  public function decreaseApplicationNb() {
+      $this->nbApplications--;
   }
 
 }

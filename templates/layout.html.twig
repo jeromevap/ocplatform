@@ -18,10 +18,14 @@
 
 <body>
 <div class="container">
-    <div id="header" class="jumbotron">
-        <h1 class="display-3 d-none d-md-inline">La Plateforme d'annonces</h1>
-        <h1 class="d-md-none">La Plateforme d'annonces</h1>
-        <p class="lead">Un MOOC OpenClassrooms</p>
+    <div class="row">
+        <div class="col-12">
+            <div id="header" class="jumbotron">
+                <h1 class="display-3 d-none d-md-inline">La Plateforme d'annonces</h1>
+                <h1 class="d-md-none">La Plateforme d'annonces</h1>
+                <p class="lead">Un MOOC OpenClassrooms</p>
+            </div>
+        </div>
     </div>
     <div class="row">
         <div id="menu" class="col-md-2 col-12">
@@ -39,17 +43,15 @@
             </div>
         </div>
         <div class="col-md-10 col-12">
-            <div class="row">
-                {% block body %}
-                    <p>Layout vide</p>
-                {% endblock %}
-            </div>
+            {% block body %}
+                <p>Layout vide</p>
+            {% endblock %}
         </div>
     </div>
     <hr>
     <div class="row">
         <footer>
-            <p>Mon petit site à moi que j'ai © {{ 'now'|date('Y') }}</p>
+            <p>Mon petit site à moi que j'ai ©{{ 'now'|date('Y') }}</p>
         </footer>
     </div>
 
