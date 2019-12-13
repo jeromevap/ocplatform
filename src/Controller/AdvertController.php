@@ -10,6 +10,7 @@ use App\Form\AdvertType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -106,21 +107,15 @@ class AdvertController extends AbstractController
      */
     public function add(Request $request)
     {
-        // On crée un objet Advert
-        $advert = new Advert();
+        {
+            $advert = new Advert();
+            $form = $this->get('form.factory')->create(
+              AdvertType::class,
+              $advert
+            );
 
-        $form = $this->get('form.factory')->create(AdvertType::class, $advert);
-
-        // Si la requête est en POST
-        if ($request->isMethod('POST')) {
-            // On fait le lien Requête <-> Formulaire
-            $form->handleRequest($request);
-
-            // On vérifie que les valeurs entrées sont correctes
-            if ($form->isValid()) {
-                $advert->getImage()->upload();
-
-                // On enregistre notre objet $advert dans la base de données, par exemple
+            if ($request->isMethod('POST') && $form->handleRequest($request)
+                ->isValid()) {
                 $em = $this->getDoctrine()->getManager();
                 $em->persist($advert);
                 $em->flush();
@@ -130,22 +125,19 @@ class AdvertController extends AbstractController
                   'Annonce bien enregistrée.'
                 );
 
-                // On redirige vers la page de visualisation de l'annonce
                 return $this->redirectToRoute(
                   'oc_advert_view',
                   ['id' => $advert->getId()]
                 );
             }
+
+            return $this->render(
+              'Advert/add.html.twig',
+              [
+                'form' => $form->createView(),
+              ]
+            );
         }
-        // À ce stade, le formulaire n'est pas valide car :
-        // - Soit la requête est de type GET, donc le visiteur vient d'arriver sur la page et veut voir le formulaire
-        // - Soit la requête est de type POST, mais le formulaire contient des valeurs invalides, donc on l'affiche de nouveau
-        return $this->render(
-          'Advert/add.html.twig',
-          [
-            'form' => $form->createView(),
-          ]
-        );
     }
 
     /**
@@ -157,62 +149,29 @@ class AdvertController extends AbstractController
      */
     public function edit($id, Request $request)
     {
-        $manager = $this->getDoctrine()->getManager();
-        $advert = $manager->getRepository('App:Advert')->find($id);
-        if (is_null($advert)) {
-            throw $this->createNotFoundException(
-              "Aucune annonce d'ID ${id} trouvée dans la base."
-            );
+        $em = $this->getDoctrine()->getManager();
+
+        $advert = $em->getRepository('App:Advert')->find($id);
+
+        if (null === $advert) {
+            throw new NotFoundHttpException("L'annonce d'id ".$id." n'existe pas.");
         }
 
         $form = $this->get('form.factory')->create(AdvertEditType::class, $advert);
 
-        // Si la requête est en POST
-        if ($request->isMethod('POST')) {
-            // On fait le lien Requête <-> Formulaire
-            $form->handleRequest($request);
+        if ($request->isMethod('POST') && $form->handleRequest($request)->isValid()) {
+            // Inutile de persister ici, Doctrine connait déjà notre annonce
+            $em->flush();
 
-            // On vérifie que les valeurs entrées sont correctes
-            if ($form->isValid()) {
-                // On enregistre notre objet $advert dans la base de données, par exemple
-                $em = $this->getDoctrine()->getManager();
-                $em->persist($advert);
-                $em->flush();
+            $request->getSession()->getFlashBag()->add('notice', 'Annonce bien modifiée.');
 
-                $request->getSession()->getFlashBag()->add(
-                  'notice',
-                  'Annonce bien enregistrée.'
-                );
-
-                // On redirige vers la page de visualisation de l'annonce
-                return $this->redirectToRoute(
-                  'oc_advert_view',
-                  ['id' => $advert->getId()]
-                );
-            }
+            return $this->redirectToRoute('oc_advert_view', array('id' => $advert->getId()));
         }
 
-        // La méthode findAll retourne toutes les catégories de la base de données
-        $listCategories = $manager->getRepository('App:Category')->findAll();
-
-        // On boucle sur les catégories pour les lier à l'annonce
-        foreach ($listCategories as $category) {
-            $advert->addCategory($category);
-        }
-
-        // Pour persister le changement dans la relation, il faut persister l'entité propriétaire
-        // Ici, Advert est le propriétaire, donc inutile de la persister car on l'a récupérée depuis Doctrine
-
-        // Étape 2 : On déclenche l'enregistrement
-        $manager->flush();
-
-        return $this->render(
-          'Advert/edit.html.twig',
-          [
-            'form' => $form->createView(),
-            'advert' => $advert,
-          ]
-        );
+        return $this->render(':Advert:edit.html.twig', array(
+          'advert' => $advert,
+          'form'   => $form->createView(),
+        ));
     }
 
     //@formatter:off
@@ -229,23 +188,28 @@ class AdvertController extends AbstractController
         $advert = $em->getRepository('App:Advert')->find($id);
 
         if (is_null($advert)) {
-            throw $this->createNotFoundException(
-              "L'annonce d'id ".$id." n'existe pas."
+            throw new NotFoundHttpException(
+              "L'annonce d'id ${id} n'existe pas."
             );
         }
 
-        // On boucle sur les catégories de l'annonce pour les supprimer
-        foreach ($advert->getCategories() as $category) {
-            $advert->removeCategory($category);
+        // On crée un formulaire vide, qui ne contiendra que le champ CSRF
+        // Cela permet de protéger la suppression d'annonce contre cette faille
+        $form = $this->get('form.factory')->create();
+
+        if ($request->isMethod('POST') && $form->handleRequest($request)->isValid()) {
+            $em->remove($advert);
+            $em->flush();
+
+            $request->getSession()->getFlashBag()->add('info', "L'annonce a bien été supprimée.");
+
+            return $this->redirectToRoute('oc_advert_index');
         }
 
-        // Pour persister le changement dans la relation, il faut persister l'entité propriétaire
-        // Ici, Advert est le propriétaire, donc inutile de la persister car on l'a récupérée depuis Doctrine
-
-        // On déclenche la modification
-        $em->flush();
-
-        return $this->render('Advert/delete.html.twig');
+        return $this->render('Advert/delete.html.twig', array(
+          'advert' => $advert,
+          'form'   => $form->createView(),
+        ));
 
     }
 
@@ -287,7 +251,7 @@ class AdvertController extends AbstractController
      *
      * @return \Symfony\Component\Form\FormInterface
      */
-    private function createFormFor(Advert $advert) : FormInterface
+    private function createFormFor(Advert $advert): FormInterface
     {
         return $this->get('form.factory')->create(AdvertType::class, $advert);
     }

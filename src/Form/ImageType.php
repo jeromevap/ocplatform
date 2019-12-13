@@ -15,7 +15,17 @@ class ImageType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-          ->add('image', FileType::class);
+          ->add('file', FileType::class);
+    }
+
+    public function configureOptions(OptionsResolver $resolver)
+    {
+        $resolver->setDefaults(
+          [
+            'data_class' => 'App\Entity\Image',
+          ]
+        );
+
     }
 
 }
