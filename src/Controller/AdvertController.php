@@ -8,10 +8,11 @@ use App\Entity\Advert;
 use App\Form\AdvertEditType;
 use App\Form\AdvertType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @Route("/advert")
@@ -154,32 +155,51 @@ class AdvertController extends AbstractController
         $advert = $em->getRepository('App:Advert')->find($id);
 
         if (null === $advert) {
-            throw new NotFoundHttpException("L'annonce d'id ".$id." n'existe pas.");
+            throw new NotFoundHttpException(
+              "L'annonce d'id ".$id." n'existe pas."
+            );
         }
 
-        $form = $this->get('form.factory')->create(AdvertEditType::class, $advert);
+        $form = $this->get('form.factory')->create(
+          AdvertEditType::class,
+          $advert
+        );
 
-        if ($request->isMethod('POST') && $form->handleRequest($request)->isValid()) {
+        if ($request->isMethod('POST') && $form->handleRequest($request)
+            ->isValid()) {
             // Inutile de persister ici, Doctrine connait déjà notre annonce
             $em->flush();
 
-            $request->getSession()->getFlashBag()->add('notice', 'Annonce bien modifiée.');
+            $request->getSession()->getFlashBag()->add(
+              'notice',
+              'Annonce bien modifiée.'
+            );
 
-            return $this->redirectToRoute('oc_advert_view', array('id' => $advert->getId()));
+            return $this->redirectToRoute(
+              'oc_advert_view',
+              ['id' => $advert->getId()]
+            );
         }
 
-        return $this->render(':Advert:edit.html.twig', array(
-          'advert' => $advert,
-          'form'   => $form->createView(),
-        ));
+        return $this->render(
+          ':Advert:edit.html.twig',
+          [
+            'advert' => $advert,
+            'form' => $form->createView(),
+          ]
+        );
     }
 
     //@formatter:off
   /**
    * @Route("/delete/{id}", name="oc_advert_delete", requirements={"id" = "\d+"})
-   */
+    * @param $id
+    * @param \Symfony\Component\HttpFoundation\Request $request
+    *
+    * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
+    */
   //@formatter:on
-    public function delete($id)
+    public function delete($id, Request $request)
     {
 
         $em = $this->getDoctrine()->getManager();
@@ -197,19 +217,26 @@ class AdvertController extends AbstractController
         // Cela permet de protéger la suppression d'annonce contre cette faille
         $form = $this->get('form.factory')->create();
 
-        if ($request->isMethod('POST') && $form->handleRequest($request)->isValid()) {
+        if ($request->isMethod('POST') && $form->handleRequest($request)
+            ->isValid()) {
             $em->remove($advert);
             $em->flush();
 
-            $request->getSession()->getFlashBag()->add('info', "L'annonce a bien été supprimée.");
+            $request->getSession()->getFlashBag()->add(
+              'info',
+              "L'annonce a bien été supprimée."
+            );
 
             return $this->redirectToRoute('oc_advert_index');
         }
 
-        return $this->render('Advert/delete.html.twig', array(
-          'advert' => $advert,
-          'form'   => $form->createView(),
-        ));
+        return $this->render(
+          'Advert/delete.html.twig',
+          [
+            'advert' => $advert,
+            'form' => $form->createView(),
+          ]
+        );
 
     }
 
@@ -247,13 +274,38 @@ class AdvertController extends AbstractController
     }
 
     /**
-     * @param \App\Entity\Advert $advert
+     * @Route("/testvalidation", name="oc_advert_testvalidation")
+     * On utilise l'injection de dépendance pour récupérer le service validator.
+     * Ca ne marche pas avec le code OC qui passe par un get sur le container.
      *
-     * @return \Symfony\Component\Form\FormInterface
+     * @param \Symfony\Component\Validator\Validator\ValidatorInterface $validator
+     *
+     * @return Response
+     * @throws \Exception
      */
-    private function createFormFor(Advert $advert): FormInterface
+    public function testvalidation(ValidatorInterface $validator)
     {
-        return $this->get('form.factory')->create(AdvertType::class, $advert);
+        $advert = new Advert;
+
+        $advert->setDate(new \Datetime());  // Champ « date » OK
+        $advert->setTitle(
+          'abc'
+        );           // Champ « title » incorrect : moins de 10 caractères
+        //$advert->setContent('blabla');    // Champ « content » incorrect : on ne le définit pas
+        $advert->setAuthor(
+          'A'
+        );            // Champ « author » incorrect : moins de 2 caractères
+
+        // On déclenche la validation sur notre object
+        $listErrors = $validator->validate($advert);
+
+        // Si $listErrors n'est pas vide, on affiche les erreurs
+        if (count($listErrors) > 0) {
+            // $listErrors est un objet, sa méthode __toString permet de lister joliement les erreurs
+            return new Response((string)$listErrors);
+        } else {
+            return new Response("L'annonce est valide !");
+        }
     }
 
 }

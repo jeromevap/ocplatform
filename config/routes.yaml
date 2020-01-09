@@ -5,3 +5,18 @@
 hello:
     path: /hello
     controller: App\Controller\HelloController::index
+
+login:
+    path: /login
+    defaults:
+        _controller: App\Controller\SecurityController::login
+
+login_check:
+    path: /login_check
+
+logout:
+    path: /logout
+
+index:
+    path: /advert
+    controller: App\Controller\AdvertController::index
